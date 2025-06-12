@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lückensätze – Wohnen</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      text-align: center;
+    }
+
+    .start-screen, .question-screen, .result-screen {
+      display: none;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .start-screen {
+      display: flex;
+    }
+
+    .start-screen h1 {
+      color: #333;
+      font-size: 1.8em;
+      margin-bottom: 20px;
+    }
+
+    .start-button {
+      padding: 12px 24px;
+      font-size: 1em;
+      background-color: #e63946;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .start-button:hover {
+      background-color: #c62828;
+    }
+
+    .question-screen {
+      display: none;
+    }
+
+    .question {
+      margin-bottom: 30px;
+    }
+
+    .question p {
+      font-size: 1.2em;
+      margin-bottom: 15px;
+    }
+
+    #progress-text {
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 1em;
+    }
+
+    .answers {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    .answers button {
+      padding: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .answers button:hover {
+      background-color: #0056b3;
+    }
+
+    .answers button:disabled {
+      cursor: default;
+      opacity: 0.8;
+    }
+
+    .result-screen h2 {
+      font-size: 1.5em;
+    }
+
+    .result-screen p {
+      margin-top: 10px;
+      font-size: 1em;
+    }
+
+    .corrections {
+      text-align: left;
+      max-width: 500px;
+      margin: 20px auto;
+      font-size: 0.95em;
+    }
+
+    .corrections p {
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="start-screen">
+    <h1>Wähle das richtige Wort!</h1>
+    <button class="start-button" onclick="startQuiz()">Los geht’s!</button>
+  </div>
+
+  <div class="question-screen">
+    <p id="progress-text"></p>
+    <div class="question" id="question-container"></div>
+  </div>
+
+  <div class="result-screen">
+    <h2 id="score-text"></h2>
+    <div class="corrections" id="correction-list"></div>
+<button class="start-button" onclick="restartQuiz()">Nochmal spielen</button>
+  </div>
+
+  <script>
+const questions = [
+  { text: "Er wirkt oft etwas ___, weil er vieles vergisst.", options: ["verpeilt", "verpeilten", "verpeiltem", "verpeilte"], correct: 0 },
+  { text: "Sie ist sehr ___ – sie vergisst ständig ihre Sachen.", options: ["vergesslich", "vergessliche", "vergesslicher", "vergesslichem"], correct: 0 },
+  { text: "Seine Kopfschmerzen können durch ___ verursacht werden.", options: ["Stress", "dem Stress", "Stresse", "den Stress"], correct: 0 },
+  { text: "Er ist mein ___ in der Klasse.", options: ["Klassenkamerad", "Klassenkameraden", "Klassenkamerads", "Klassenkamerade"], correct: 0 },
+  { text: "Sie ist meine beste ___.", options: ["Mitschülerin", "Mitschüler", "Mitschülerinnen", "Mitschülern"], correct: 0 },
+  { text: "Das ist die Meinung ___ Lehrers.", options: ["von den", "von", "vom", "von dem"], correct: 2 },
+  { text: "Er leidet an ___ Crohn.", options: ["Morbus", "Morbus'", "der Morbus", "dem Morbus"], correct: 0 },
+  { text: "Im Moment hat sie einen ___ Schub.", options: ["aktive", "aktivem", "aktiver", "aktiven"], correct: 3 },
+  { text: "Ein ___ Migräneschub kann sehr schmerzhaft sein.", options: ["fester", "plötzlicher", "nebliger", "heftiger"], correct: 1 },
+  { text: "Zwischen den Schüben befindet sie sich in der ___.", options: ["Migränephase", "Verarbeitungszeit", "Remissionsphase", "Panikphase"], correct: 2 },
+  { text: "Du solltest dir regelmäßig die ___ waschen.", options: ["Haare", "Füße", "Hände", "Zähne"], correct: 2 },
+  { text: "Nach dem Essen hat sie sich die Hände ___.", options: ["geputzt", "gecremt", "abgetrocknet", "gewaschen"], correct: 3 },
+  { text: "Ich kann mir das nur so ___, dass sie krank ist.", options: ["denken", "sagen", "erklären", "vermuten"], correct: 2 },
+  { text: "Der Mensch ___ viele Ressourcen im Alltag.", options: ["verbraucht", "füllt", "entwickelt", "braucht"], correct: 0 },
+  { text: "Stress kann in der Gesundheit eine Rolle ___.", options: ["leiten", "bestimmen", "spielen", "führen"], correct: 2 },
+  { text: "Das Thema spielt auch in der Forschung eine Rolle ___.", options: ["zu", "mit", "an", "in"], correct: 3 },
+  { text: "Das Gehirn muss viele Reize gleichzeitig ___.", options: ["speichern", "verarbeiten", "verbessern", "vermeiden"], correct: 1 },
+  { text: "Viele Nerven verlaufen direkt im ___.", options: ["Herzen", "Magen", "Nerv", "Gehirn"], correct: 2 },
+  { text: "Man kann räumliche Distanz durch ___ wahrnehmen.", options: ["2D", "3D", "HD", "Audio"], correct: 1 },
+  { text: "Das Kind ___ nach dem Spielzeug.", options: ["nimmt", "drückt", "greift", "zeigt"], correct: 2 },
+  { text: "Er hatte einen sehr festen ___.", options: ["Griff", "Arm", "Hand", "Stiel"], correct: 0 },
+  { text: "Das ___ ist für viele Denkprozesse zuständig.", options: ["Herz", "Blut", "Gehirn", "Nervensystem"], correct: 2 },
+  { text: "Im Salat ist viel ___.", options: ["Gemüse", "Gemenge", "Gefüge", "Getreide"], correct: 0 },
+  { text: "Das Wort ___ bezeichnet eine Mischung.", options: ["Gemüse", "Gemenge", "Gehalt", "Gefühl"], correct: 1 },
+  { text: "Das soziale ___ in einer Klasse ist wichtig.", options: ["Gefühl", "Gefüge", "Gebiet", "Gebaren"], correct: 1 },
+  { text: "Der Begriff ist ein ___ für viele Arten.", options: ["Unterbegriff", "Fachausdruck", "Sammelbegriff", "Überbegriff"], correct: 3 },
+  { text: "Der Adler ist eine ___.", options: ["Vogalart", "Vogelart", "Vogalart", "Vogeart"], correct: 1 },
+  { text: "Man kann den Schmerz nicht genau ___ im Körper.", options: ["fühlen", "lokalisieren", "spüren", "verstehen"], correct: 1 },
+  { text: "Ich kann das nicht ganz ___.", options: ["ermitteln", "erinnern", "verstehen", "erlernen"], correct: 2 },
+  { text: "Ich habe das Problem jetzt ___.", options: ["außer Kontrolle", "im Griff", "auswendig gelernt", "weg"], correct: 1 },
+  { text: "Sie konnte ihre Migräne endlich in den Griff ___.", options: ["nehmen", "bekommen", "fangen", "machen"], correct: 1 },
+  { text: "Das war keine ___ Handlung, sondern ein Unfall.", options: ["absichtliche", "zufällige", "geplante", "absichtlich"], correct: 0 },
+  { text: "Er hat das ganz ___ gemacht!", options: ["absichtlich", "zufällig", "ausversehen", "unbewusst"], correct: 0 },
+  { text: "Das Medikament wirkt nicht so gut, wie ich gehofft ___.", options: ["hatte", "habe", "wurde", "bin"], correct: 0 },
+  { text: "Das hat keine so gute Wirkung, wie es ___ hätte.", options: ["soll", "könnte", "hätte", "würde"], correct: 2 },
+  { text: "Der Virus kann auch auf andere ___ werden.", options: ["gewechselt", "übertragen", "getauscht", "geteilt"], correct: 1 },
+  { text: "Diese Krankheit ist schwer zu ___.", options: ["übertragen", "teilen", "behalten", "lösen"], correct: 0 },
+  { text: "Wenn ihnen Magnesium ___, fühlen sie sich schlapp.", options: ["fehlt", "brauchte", "verbraucht", "nutzt"], correct: 0 },
+  { text: "Ich habe bis vor Kurzem noch daran ___.", options: ["gelitten", "erkrankt", "gedacht", "versucht"], correct: 0 },
+  { text: "Sie litt an ___.", options: ["einem Aura", "AURA", "der Aura", "Aura"], correct: 3 },
+  { text: "___ des Jahres war sie noch gesund.", options: ["Mitte", "Anfang", "Ende", "Start"], correct: 1 },
+  { text: "___ des Jahres wurde sie krank.", options: ["Ende", "Früh", "Beginn", "Abschluss"], correct: 0 },
+  { text: "Mir fehlen einige wichtige ___.", options: ["Vitamine", "Mineralien", "Energie", "Kohlenhydrate"], correct: 1 },
+  { text: "Ich brauche mehr ___.", options: ["Energie", "Nährstoffe", "Zucker", "Flüssigkeit"], correct: 1 },
+  { text: "Die Oberfläche fühlt sich glatt ___.", options: ["sein", "an", "fühlen", "anfühlen"], correct: 3 },
+  { text: "Ich habe seit Tagen ___.", options: ["Kopfschmerzen", "Hals", "Nase", "Ohrenschmerzen"], correct: 0 },
+  { text: "Der ___ ist oft nur auf einer Seite spürbar.", options: ["Kopfschmerz", "Schmerz", "Migräneschub", "Druck"], correct: 0 },
+  { text: "Was könnte wohl hinter diesen Symptomen ___?", options: ["stehen", "stecken", "wirken", "liegen"], correct: 1 },
+  { text: "Das klingt ___ wie das, was sie hat.", options: ["ähnlich", "anders", "genauso", "vertraut"], correct: 0 },
+  { text: "Das klingt genau ___ wie das, was sie hatte.", options: ["ähnlich", "so", "wie", "genauso"], correct: 3 }
+];
+
+
+
+    let currentQuestion = 0;
+    let score = 0;
+    let incorrectAnswers = [];
+
+    function startQuiz() {
+      document.querySelector('.start-screen').style.display = 'none';
+      document.querySelector('.question-screen').style.display = 'flex';
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const container = document.getElementById('question-container');
+      const progressText = document.getElementById('progress-text');
+      container.innerHTML = '';
+
+      const q = questions[currentQuestion];
+      progressText.textContent = `Frage ${currentQuestion + 1} von ${questions.length}`;
+
+      const questionText = document.createElement('p');
+      questionText.textContent = q.text;
+      container.appendChild(questionText);
+
+      const answerButtons = document.createElement('div');
+      answerButtons.classList.add('answers');
+
+      q.options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.textContent = option;
+        btn.onclick = () => handleAnswer(btn, index, answerButtons);
+        answerButtons.appendChild(btn);
+      });
+
+      container.appendChild(answerButtons);
+    }
+
+    function handleAnswer(clickedButton, index, buttonContainer) {
+      const q = questions[currentQuestion];
+      const buttons = buttonContainer.querySelectorAll('button');
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.correct) {
+          btn.style.backgroundColor = 'green';
+        } else if (btn === clickedButton) {
+          btn.style.backgroundColor = 'red';
+        } else {
+          btn.style.backgroundColor = '#aaa';
+        }
+      });
+
+      if (index === q.correct) {
+        score++;
+      } else {
+        incorrectAnswers.push({ question: q.text, correctAnswer: q.options[q.correct] });
+      }
+
+      setTimeout(() => {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+          showQuestion();
+        } else {
+          showResult();
+        }
+      }, 1200);
+    }
+
+    function showResult() {
+      document.querySelector('.question-screen').style.display = 'none';
+      const resultScreen = document.querySelector('.result-screen');
+      resultScreen.style.display = 'flex';
+
+      const scoreText = document.getElementById('score-text');
+      scoreText.textContent = `Du hast ${score} von ${questions.length} richtig.`;
+
+      const correctionList = document.getElementById('correction-list');
+      correctionList.innerHTML = '';
+
+      incorrectAnswers.forEach(item => {
+        const p = document.createElement('p');
+        p.innerHTML = `Frage: ${item.question.replace("___", "_____")}<br><strong>Richtige Antwort:</strong> ${item.correctAnswer}`;
+        correctionList.appendChild(p);
+      });
+
+
+function restartQuiz() {
+  currentQuestion = 0;
+  score = 0;
+  incorrectAnswers = [];
+
+  document.querySelector('.result-screen').style.display = 'none';
+  document.querySelector('.start-screen').style.display = 'flex';
+
+  }
+    }
+  </script>
+</body>
+</html>
